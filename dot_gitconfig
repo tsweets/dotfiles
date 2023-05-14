@@ -1,0 +1,14 @@
+[core]
+	excludesfile = /Users/tsweets/.gitignore_global
+	autocrlf = input
+[difftool "sourcetree"]
+	cmd = opendiff \"$LOCAL\" \"$REMOTE\"
+	path = 
+[mergetool "sourcetree"]
+	cmd = /private/var/folders/_b/zrm7p95j6c9c92bykdy81r6r0000gn/T/AppTranslocation/2D21F9E1-D110-4ABE-B7B3-A31758DAFC8C/d/Sourcetree.app/Contents/Resources/opendiff-w.sh \"$LOCAL\" \"$REMOTE\" -ancestor \"$BASE\" -merge \"$MERGED\"
+	trustExitCode = true
+[user]
+	name = Tony Sweets
+	email = tony.sweets@gmail.com
+[commit]
+	template = /Users/tsweets/.stCommitMsg
