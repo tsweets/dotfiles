@@ -1,0 +1,31 @@
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority: k3d-local-sp6-ca.pem
+    server: https://0.0.0.0:39045
+  name: k3d-local-sp6-cluster
+- cluster:
+    certificate-authority: k3s-cluster-ca.pem
+    server: https://10.107.0.110:6443
+  name: k3s-ha-cluster
+contexts:
+- context:
+    cluster: k3d-local-sp6-cluster
+    user: admin@k3d-test-cluster
+  name: k3d-local-sp6-cluster
+- context:
+    cluster: k3s-ha-cluster
+    user: k3s-ha-default
+  name: k3s-ha-cluster
+current-context: k3d-local-sp6-cluster
+kind: Config
+preferences: {}
+users:
+- name: admin@k3d-test-cluster
+  user:
+    client-certificate: k3d-local-sp6-cert.pem
+    client-key: k3d-local-sp6-key.pem
+- name: k3s-ha-default
+  user:
+    client-certificate: k3s-cluster-cert.pem
+    client-key: k3s-cluster-key.pem
