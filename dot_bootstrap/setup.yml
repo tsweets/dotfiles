@@ -5,8 +5,12 @@
   connection: local
   gather_facts: true
   vars:
-    flyctl_version: "0.1.130"
-    pulumi_version: "v3.94.2"
+    docker_apt_arch: "{{ 'arm64' if ansible_architecture == 'aarch64' else 'amd64' }}"
+    docker_repo_url: https://download.docker.com/linux
+    docker_apt_release_channel: stable
+    docker_apt_ansible_distribution: "{{ 'ubuntu' if ansible_distribution in ['Pop!_OS', 'Linux Mint'] else ansible_distribution }}"
+    docker_apt_repository: "deb [arch={{ docker_apt_arch }}] {{ docker_repo_url }}/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} {{ docker_apt_release_channel }}"
+    docker_apt_repository: "deb [arch={{ docker_apt_arch }} signed-by=/usr/share/keyrings/docker.asc] {{ docker_repo_url }}/{{ docker_apt_ansible_distribution | lower }} {{ ansible_distribution_release }} {{ docker_apt_release_channel }}"
 
   tasks:
     - name: Get my user
@@ -14,7 +18,7 @@
         remote_regular_user: "{{ ansible_env.SUDO_USER or ansible_user_id }}"
 
     - name: Install packages
-      ansible.builtin.dnf:
+      ansible.builtin.package:
         name:
           - git
           - htop
@@ -29,11 +33,20 @@
         name: "{{ remote_regular_user }}"
         shell: /usr/bin/zsh
 
+
+    - name: Import Brave Browser GPG Key
+      ansible.builtin.get_url:
+        url: https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
+        dest: /usr/share/keyrings/brave-browser-archive-keyring.gpg
+      when: ansible_os_family == 'Debian'
+
+
     - name: Add Brave Browser Repo (deb)
       ansible.builtin.apt_repository:
         repo: deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main
         state: present
-        when: ansible_os_family == 'Debian'
+      become: true  
+      when: ansible_os_family == 'Debian'
 
     - name: Add Brave Browser Repo (yum)
       ansible.builtin.yum_repository:
@@ -43,44 +56,38 @@
         gpgkey: https://brave-browser-rpm-release.s3.brave.com/brave-core.asc
         gpgcheck: true
         enabled: true
-        when: ansible_os_family == 'RedHat'
+      when: ansible_os_family == 'RedHat'
 
-
-
-    - name: Import Brave Browser GPG Key
-      ansible.builtin.apt_key:
-        url: https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
-        state: present
-        when: ansible_os_family == 'Debian'
 
     - name: Import Brave Browser GPG Key
       ansible.builtin.rpm_key:
         key: https://brave-browser-rpm-release.s3.brave.com/brave-core.asc
         state: present
-        when: ansible_os_family == 'RedHat'
+      when: ansible_os_family == 'RedHat'
 
     - name: Install Brave Browser
       ansible.builtin.package:
         name: brave-browser
         state: present
 
+# curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gp
     - name: Import Microsoft GPG Key
-      ansible.builtin.apt_key:
-        key:https://packages.microsoft.com/keys/microsoft.asc 
-        state: present
-        when: ansible_os_family == 'Debian'
+      ansible.builtin.get_url:
+        url: https://packages.microsoft.com/keys/microsoft.asc 
+        dest: /usr/share/keyrings/microsoft.asc
+      when: ansible_os_family == 'Debian'
 
     - name: Import Microsoft GPG Key
       ansible.builtin.rpm_key:
         key: https://packages.microsoft.com/keys/microsoft.asc
         state: present
-        when: ansible_os_family == 'RedHat'
+      when: ansible_os_family == 'RedHat'
 
     - name: Add Visual Studio Code Repo (deb)
       ansible.builtin.apt_repository:
-        repo: deb [arch=amd64,arm64,armhf signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main
+        repo: deb [arch=amd64,arm64,armhf signed-by=/usr/share/keyrings/microsoft.asc] https://packages.microsoft.com/repos/code stable main
         state: present
-        when: ansible_os_family == 'Debian'
+      when: ansible_os_family == 'Debian'
 
     - name: Add Visual Studio Code Repo (yum)
       ansible.builtin.yum_repository:
@@ -90,7 +97,7 @@
         gpgkey: https://packages.microsoft.com/keys/microsoft.asc
         gpgcheck: true
         enabled: true
-        when: ansible_os_family == 'RedHat'
+      when: ansible_os_family == 'RedHat'
 
     - name: Install VS Code
       ansible.builtin.package:
@@ -99,16 +106,16 @@
 
 
     - name: Import Docker GPG Key
-      ansible.builtin.apt_key:
-        key: https://download.docker.com/linux/ubuntu/gpg 
-        state: present
-        when: ansible_os_family == 'Debian'
+      ansible.builtin.get_url:
+        url: https://download.docker.com/linux/ubuntu/gpg 
+        dest: /usr/share/keyrings/docker.asc
+      when: ansible_os_family == 'Debian'
 
-    - name: Add Visual Studio Code Repo (deb)
+    - name: Add Docker Repo (deb)
       ansible.builtin.apt_repository:
-        repo: deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" 
+        repo: "{{ docker_apt_repository }}"
         state: present
-        when: ansible_os_family == 'Debian'
+      when: ansible_os_family == 'Debian'
 
     - name: Add Docker repo
       ansible.builtin.yum_repository:
@@ -118,7 +125,7 @@
         gpgkey: "https://download.docker.com/linux/fedora/gpg"
         gpgcheck: true
         enabled: true
-        when: ansible_os_family == 'RedHat'
+      when: ansible_os_family == 'RedHat'
 
     - name: Install Docker
       ansible.builtin.package:
