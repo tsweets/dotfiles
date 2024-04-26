@@ -31,7 +31,6 @@
 
     - name: Add Brave Browser Repo (deb)
       ansible.builtin.apt_repository:
-        repo: deb http://archive.canonical.com/ubuntu hardy partner
         repo: deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main
         state: present
         when: ansible_os_family == 'Debian'
@@ -66,11 +65,24 @@
         state: present
 
     - name: Import Microsoft GPG Key
+      ansible.builtin.apt_key:
+        key:https://packages.microsoft.com/keys/microsoft.asc 
+        state: present
+        when: ansible_os_family == 'Debian'
+
+    - name: Import Microsoft GPG Key
       ansible.builtin.rpm_key:
         key: https://packages.microsoft.com/keys/microsoft.asc
         state: present
+        when: ansible_os_family == 'RedHat'
 
-    - name: Add Visual Studio Code Repo
+    - name: Add Visual Studio Code Repo (deb)
+      ansible.builtin.apt_repository:
+        repo: deb [arch=amd64,arm64,armhf signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main
+        state: present
+        when: ansible_os_family == 'Debian'
+
+    - name: Add Visual Studio Code Repo (yum)
       ansible.builtin.yum_repository:
         name: vscode
         description: Visual Studio Code
@@ -78,11 +90,25 @@
         gpgkey: https://packages.microsoft.com/keys/microsoft.asc
         gpgcheck: true
         enabled: true
+        when: ansible_os_family == 'RedHat'
 
     - name: Install VS Code
-      ansible.builtin.dnf:
+      ansible.builtin.package:
         name: code
         state: present
+
+
+    - name: Import Docker GPG Key
+      ansible.builtin.apt_key:
+        key: https://download.docker.com/linux/ubuntu/gpg 
+        state: present
+        when: ansible_os_family == 'Debian'
+
+    - name: Add Visual Studio Code Repo (deb)
+      ansible.builtin.apt_repository:
+        repo: deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" 
+        state: present
+        when: ansible_os_family == 'Debian'
 
     - name: Add Docker repo
       ansible.builtin.yum_repository:
@@ -92,9 +118,10 @@
         gpgkey: "https://download.docker.com/linux/fedora/gpg"
         gpgcheck: true
         enabled: true
+        when: ansible_os_family == 'RedHat'
 
     - name: Install Docker
-      ansible.builtin.dnf:
+      ansible.builtin.package:
         name:
           - docker-ce
           - docker-ce-cli
@@ -115,33 +142,33 @@
         append: true
 
   
-    - name: Add kubectl repo
-      ansible.builtin.yum_repository:
-        name: Kubernetes
-        description: Kubernetes repo
-        baseurl: https://pkgs.k8s.io/core:/stable:/v1.28/rpm/
-        gpgkey: https://pkgs.k8s.io/core:/stable:/v1.28/rpm/repodata/repomd.xml.key
-        gpgcheck: true
-        enabled: true
+    # - name: Add kubectl repo
+    #   ansible.builtin.yum_repository:
+    #     name: Kubernetes
+    #     description: Kubernetes repo
+    #     baseurl: https://pkgs.k8s.io/core:/stable:/v1.28/rpm/
+    #     gpgkey: https://pkgs.k8s.io/core:/stable:/v1.28/rpm/repodata/repomd.xml.key
+    #     gpgcheck: true
+    #     enabled: true
 
-    - name: Install kubectl
-      ansible.builtin.dnf:
-        name: kubectl
-        state: present
+    # - name: Install kubectl
+    #   ansible.builtin.dnf:
+    #     name: kubectl
+    #     state: present
 
-    - name: Add Hashicorp Repo
-      ansible.builtin.yum_repository:
-        name: hashicorp
-        description: Hashicorp repo
-        baseurl: https://rpm.releases.hashicorp.com/fedora/$releasever/$basearch/stable
-        gpgkey: https://rpm.releases.hashicorp.com/gpg
-        gpgcheck: true
-        enabled: true
+    # - name: Add Hashicorp Repo
+    #   ansible.builtin.yum_repository:
+    #     name: hashicorp
+    #     description: Hashicorp repo
+    #     baseurl: https://rpm.releases.hashicorp.com/fedora/$releasever/$basearch/stable
+    #     gpgkey: https://rpm.releases.hashicorp.com/gpg
+    #     gpgcheck: true
+    #     enabled: true
 
-    - name: Install Terraform
-      ansible.builtin.dnf:
-        name: terraform
-        state: present
+    # - name: Install Terraform
+    #   ansible.builtin.dnf:
+    #     name: terraform
+    #     state: present
 
   
     # - name: Install Flatpak packages
