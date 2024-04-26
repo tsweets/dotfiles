@@ -1,0 +1,5 @@
+encryption = "age"
+[age]
+    identity = "~/.ssh/chezmoi-key.txt"
+    recipient = "age1y9wpld8celptd70kpemp297tzpzsknckfydd9578d6uc9h2mh5lq3jrc0a"
+
