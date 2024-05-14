@@ -20,6 +20,8 @@ case "${OS}" in
             install_on_fedora
         elif [ -f /etc/lsb-release ]; then
             install_on_ubuntu
+        elif [ -f /usr/bin/dpkg ]; then  
+            install_on_ubuntu 
         else
             echo "Unsupported Linux distribution"
             exit 1
