@@ -19,3 +19,10 @@ gpg -d dot-ssh.tar.gz.gpg | tar -xvzf -
 ```
 Note: Above cmd presents a directory issue that needs to cleaned up
 
+Debian Notes:
+
+- Need to Add user to sudo
+```
+sudo usermod -aG sudo username
+````
+
